@@ -1,9 +1,9 @@
 const builtin = @import("builtin");
 
-pub usingnamespace switch (builtin.arch) {
+pub const bpf_arch = switch (builtin.cpu.arch) {
     .bpfel, .bpfeb => @import("src/kern.zig"),
     else => @import("src/user.zig"),
 };
 
-pub usingnamespace @import("src/flags.zig");
-pub usingnamespace @import("src/common.zig");
+pub const flags = @import("src/flags.zig");
+pub const common = @import("src/common.zig");

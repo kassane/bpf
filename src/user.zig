@@ -1,10 +1,10 @@
-usingnamespace @import("flags.zig");
-usingnamespace @import("common.zig");
-usingnamespace std.os.linux;
+const flags = @import("flags.zig");
+const common = @import("common.zig");
+const linux = std.os.linux;
 
 const std = @import("std");
 const mem = std.mem;
-const errno = getErrno;
+const errno = linux.getErrno;
 const unexpectedErrno = std.os.unexpectedErrno;
 const expectError = std.testing.expectError;
 
@@ -164,7 +164,7 @@ pub const Helper = enum(i32) {
     _,
 };
 
-pub const Cmd = extern enum(usize) {
+pub const Cmd = enum(usize) {
     /// Create  a map and return a file descriptor that refers to the map.  The
     /// close-on-exec file descriptor flag is automatically enabled for the new
     /// file descriptor.
@@ -287,7 +287,7 @@ pub const Cmd = extern enum(usize) {
     _,
 };
 
-pub const ProgType = extern enum(u32) {
+pub const ProgType = enum(u32) {
     unspec,
 
     /// context type: __sk_buff
@@ -382,7 +382,7 @@ pub const ProgType = extern enum(u32) {
     _,
 };
 
-pub const AttachType = extern enum(u32) {
+pub const AttachType = enum(u32) {
     cgroup_inet_ingress,
     cgroup_inet_egress,
     cgroup_inet_sock_create,
@@ -443,7 +443,7 @@ pub const MapCreateAttr = extern struct {
     map_flags: u32,
 
     /// fd pointing to the inner map
-    inner_map_fd: fd_t,
+    inner_map_fd: linux.fd_t,
 
     /// numa node (effective only if MapCreateFlags.numa_node is set)
     numa_node: u32,
@@ -453,7 +453,7 @@ pub const MapCreateAttr = extern struct {
     map_ifindex: u32,
 
     /// fd pointing to a BTF type data
-    btf_fd: fd_t,
+    btf_fd: linux.fd_t,
 
     /// BTF type_id of the key
     btf_key_type_id: u32,
@@ -467,7 +467,7 @@ pub const MapCreateAttr = extern struct {
 
 /// struct used by Cmd.map_*_elem commands
 pub const MapElemAttr = extern struct {
-    map_fd: fd_t,
+    map_fd: linux.fd_t,
     key: u64,
     result: extern union {
         value: u64,
@@ -490,7 +490,7 @@ pub const MapBatchAttr = extern struct {
     /// input: # of key/value elements
     /// output: # of filled elements
     count: u32,
-    map_fd: fd_t,
+    map_fd: linux.fd_t,
     elem_flags: u64,
     flags: u64,
 };
@@ -526,7 +526,7 @@ pub const ProgLoadAttr = extern struct {
     expected_attach_type: u32,
 
     /// fd pointing to BTF type data
-    prog_btf_fd: fd_t,
+    prog_btf_fd: linux.fd_t,
 
     /// userspace bpf_func_info size
     func_info_rec_size: u32,
@@ -552,29 +552,29 @@ pub const ProgLoadAttr = extern struct {
 /// struct used by Cmd.obj_* commands
 pub const ObjAttr = extern struct {
     pathname: u64,
-    bpf_fd: fd_t,
+    bpf_fd: linux.fd_t,
     file_flags: u32,
 };
 
 /// struct used by Cmd.prog_attach/detach commands
 pub const ProgAttachAttr = extern struct {
     /// container object to attach to
-    target_fd: fd_t,
+    target_fd: linux.fd_t,
 
     /// eBPF program to attach
-    attach_bpf_fd: fd_t,
+    attach_bpf_fd: linux.fd_t,
 
     attach_type: u32,
     attach_flags: u32,
 
     // TODO: BPF_F_REPLACE flags
     /// previously attached eBPF program to replace if .replace is used
-    replace_bpf_fd: fd_t,
+    replace_bpf_fd: linux.fd_t,
 };
 
 /// struct used by Cmd.prog_test_run command
 pub const TestRunAttr = extern struct {
-    prog_fd: fd_t,
+    prog_fd: linux.fd_t,
     retval: u32,
 
     /// input: len of data_in
@@ -611,7 +611,7 @@ pub const GetIdAttr = extern struct {
 
 /// struct used by Cmd.obj_get_info_by_fd command
 pub const InfoAttr = extern struct {
-    bpf_fd: fd_t,
+    bpf_fd: linux.fd_t,
     info_len: u32,
     info: u64,
 };
@@ -619,7 +619,7 @@ pub const InfoAttr = extern struct {
 /// struct used by Cmd.prog_query command
 pub const QueryAttr = extern struct {
     /// container object to query
-    target_fd: fd_t,
+    target_fd: linux.fd_t,
     attach_type: u32,
     query_flags: u32,
     attach_flags: u32,
@@ -630,7 +630,7 @@ pub const QueryAttr = extern struct {
 /// struct used by Cmd.raw_tracepoint_open command
 pub const RawTracepointAttr = extern struct {
     name: u64,
-    prog_fd: fd_t,
+    prog_fd: linux.fd_t,
 };
 
 /// struct used by Cmd.btf_load command
@@ -645,10 +645,10 @@ pub const BtfLoadAttr = extern struct {
 /// struct used by Cmd.task_fd_query
 pub const TaskFdQueryAttr = extern struct {
     /// input: pid
-    pid: pid_t,
+    pid: linux.pid_t,
 
     /// input: fd
-    fd: fd_t,
+    fd: linux.fd_t,
 
     /// input: flags
     flags: u32,
@@ -665,7 +665,7 @@ pub const TaskFdQueryAttr = extern struct {
     /// output: prod_id
     prog_id: u32,
 
-    /// output: BPF_FD_TYPE
+    /// output: BPF_linux.FD_TYPE
     fd_type: u32,
 
     /// output: probe_offset
@@ -678,10 +678,10 @@ pub const TaskFdQueryAttr = extern struct {
 /// struct used by Cmd.link_create command
 pub const LinkCreateAttr = extern struct {
     /// eBPF program to attach
-    prog_fd: fd_t,
+    prog_fd: linux.fd_t,
 
     /// object to attach to
-    target_fd: fd_t,
+    target_fd: linux.fd_t,
     attach_type: u32,
 
     /// extra flags
@@ -690,17 +690,17 @@ pub const LinkCreateAttr = extern struct {
 
 /// struct used by Cmd.link_update command
 pub const LinkUpdateAttr = extern struct {
-    link_fd: fd_t,
+    link_fd: linux.fd_t,
 
     /// new program to update link with
-    new_prog_fd: fd_t,
+    new_prog_fd: linux.fd_t,
 
     /// extra flags
     flags: u32,
 
     /// expected link's program fd, it is specified only if BPF_F_REPLACE is
     /// set in flags
-    old_prog_fd: fd_t,
+    old_prog_fd: linux.fd_t,
 };
 
 /// struct used by Cmd.enable_stats command
@@ -710,7 +710,7 @@ pub const EnableStatsAttr = extern struct {
 
 /// struct used by Cmd.iter_create command
 pub const IterCreateAttr = extern struct {
-    link_fd: fd_t,
+    link_fd: linux.fd_t,
     flags: u32,
 };
 
@@ -741,10 +741,10 @@ pub const Log = struct {
 };
 
 pub fn bpf_syscall(cmd: Cmd, attr: *Attr, size: u32) usize {
-    return syscall3(.bpf, @enumToInt(cmd), @ptrToInt(attr), size);
+    return linux.syscall3(.bpf, @enumToInt(cmd), @ptrToInt(attr), size);
 }
 
-pub fn map_create(map_type: MapType, key_size: u32, value_size: u32, max_entries: u32) !fd_t {
+pub fn map_create(map_type: common.MapType, key_size: u32, value_size: u32, max_entries: u32) !linux.fd_t {
     var attr = Attr{
         .map_create = mem.zeroes(MapCreateAttr),
     };
@@ -756,11 +756,11 @@ pub fn map_create(map_type: MapType, key_size: u32, value_size: u32, max_entries
 
     const rc = bpf_syscall(.map_create, &attr, @sizeOf(MapCreateAttr));
     return switch (errno(rc)) {
-        0 => @intCast(fd_t, rc),
-        EINVAL => error.MapTypeOrAttrInvalid,
-        ENOMEM => error.SystemResources,
-        EPERM => error.AccessDenied,
-        else => |err| unexpectedErrno(rc),
+        0 => @intCast(linux.fd_t, rc),
+        flags.EINVAL => error.MapTypeOrAttrInvalid,
+        flags.ENOMEM => error.SystemResources,
+        flags.EPERM => error.AccessDenied,
+        else => unexpectedErrno(rc),
     };
 }
 
@@ -769,7 +769,7 @@ test "map_create" {
     defer std.os.close(map);
 }
 
-pub fn map_lookup_elem(fd: fd_t, key: []const u8, value: []u8) !void {
+pub fn map_lookup_elem(fd: linux.fd_t, key: []const u8, value: []u8) !void {
     var attr = Attr{
         .map_elem = mem.zeroes(MapElemAttr),
     };
@@ -781,16 +781,16 @@ pub fn map_lookup_elem(fd: fd_t, key: []const u8, value: []u8) !void {
     const rc = bpf_syscall(.map_lookup_elem, &attr, @sizeOf(MapElemAttr));
     switch (errno(rc)) {
         0 => return,
-        EBADF => return error.BadFd,
-        EFAULT => unreachable,
-        EINVAL => return error.FieldInAttrNeedsZeroing,
-        ENOENT => return error.NotFound,
-        EPERM => return error.AccessDenied,
-        else => |err| return unexpectedErrno(rc),
+        flags.EBADF => return error.BadFd,
+        flags.EFAULT => unreachable,
+        flags.EINVAL => return error.FieldInAttrNeedsZeroing,
+        flags.ENOENT => return error.NotFound,
+        flags.EPERM => return error.AccessDenied,
+        else => return unexpectedErrno(rc),
     }
 }
 
-pub fn map_update_elem(fd: fd_t, key: []const u8, value: []const u8, flags: u64) !void {
+pub fn map_update_elem(fd: linux.fd_t, key: []const u8, value: []const u8, flag: u64) !void {
     var attr = Attr{
         .map_elem = mem.zeroes(MapElemAttr),
     };
@@ -798,22 +798,22 @@ pub fn map_update_elem(fd: fd_t, key: []const u8, value: []const u8, flags: u64)
     attr.map_elem.map_fd = fd;
     attr.map_elem.key = @ptrToInt(key.ptr);
     attr.map_elem.result = .{ .value = @ptrToInt(value.ptr) };
-    attr.map_elem.flags = flags;
+    attr.map_elem.flags = flag;
 
     const rc = bpf_syscall(.map_update_elem, &attr, @sizeOf(MapElemAttr));
     switch (errno(rc)) {
         0 => return,
-        E2BIG => return error.ReachedMaxEntries,
-        EBADF => return error.BadFd,
-        EFAULT => unreachable,
-        EINVAL => return error.FieldInAttrNeedsZeroing,
-        ENOMEM => return error.SystemResources,
-        EPERM => return error.AccessDenied,
+        flags.E2BIG => return error.ReachedMaxEntries,
+        flags.EBADF => return error.BadFd,
+        flags.EFAULT => unreachable,
+        flags.EINVAL => return error.FieldInAttrNeedsZeroing,
+        flags.ENOMEM => return error.SystemResources,
+        flags.EPERM => return error.AccessDenied,
         else => |err| return unexpectedErrno(err),
     }
 }
 
-pub fn map_delete_elem(fd: fd_t, key: []const u8) !void {
+pub fn map_delete_elem(fd: linux.fd_t, key: []const u8) !void {
     var attr = Attr{
         .map_elem = mem.zeroes(MapElemAttr),
     };
@@ -824,11 +824,11 @@ pub fn map_delete_elem(fd: fd_t, key: []const u8) !void {
     const rc = bpf_syscall(.map_delete_elem, &attr, @sizeOf(MapElemAttr));
     switch (errno(rc)) {
         0 => return,
-        EBADF => return error.BadFd,
-        EFAULT => unreachable,
-        EINVAL => return error.FieldInAttrNeedsZeroing,
-        ENOENT => return error.NotFound,
-        EPERM => return error.AccessDenied,
+        flags.EBADF => return error.BadFd,
+        flags.EFAULT => unreachable,
+        flags.EINVAL => return error.FieldInAttrNeedsZeroing,
+        flags.ENOENT => return error.NotFound,
+        flags.EPERM => return error.AccessDenied,
         else => |err| return unexpectedErrno(err),
     }
 }
@@ -867,7 +867,7 @@ pub fn prog_load(
     log: ?*Log,
     license: []const u8,
     kern_version: u32,
-) !fd_t {
+) !linux.fd_t {
     var attr = Attr{
         .prog_load = mem.zeroes(ProgLoadAttr),
     };
@@ -886,11 +886,11 @@ pub fn prog_load(
 
     const rc = bpf_syscall(.prog_load, &attr, @sizeOf(ProgLoadAttr));
     return switch (errno(rc)) {
-        0 => @intCast(fd_t, rc),
-        EACCES => error.UnsafeProgram,
-        EFAULT => unreachable,
-        EINVAL => error.InvalidProgram,
-        EPERM => error.AccessDenied,
+        0 => @intCast(linux.fd_t, rc),
+        flags.EACCES => error.UnsafeProgram,
+        flags.EFAULT => unreachable,
+        flags.EINVAL => error.InvalidProgram,
+        flags.EPERM => error.AccessDenied,
         else => |err| unexpectedErrno(err),
     };
 }
@@ -919,13 +919,13 @@ test "prog_load" {
 
 pub const MapInfo = struct {
     name: []const u8,
-    fd: ?fd_t,
+    fd: ?linux.fd_t,
     def: kern.MapDef,
 };
 
 pub fn Map(comptime Key: type, comptime Value: type) type {
     return struct {
-        fd: fd_t,
+        fd: linux.fd_t,
         def: kern.MapDef,
 
         const Self = @This();
@@ -952,7 +952,7 @@ pub const PerfEventArray = struct {
     const Self = @This();
 
     pub fn init(info: MapInfo) !Self {
-        if (info.def.type != @enumToInt(MapType.perf_event_array))
+        if (info.def.type != @enumToInt(common.MapType.perf_event_array))
             return error.MapTypeMismatch;
 
         return Self{ .map = try Map(u32, u32).init(info) };

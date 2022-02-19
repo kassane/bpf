@@ -1,23 +1,23 @@
 const std = @import("std");
 
-usingnamespace @import("common.zig");
+const common = @import("common.zig");
 
 pub const helpers = @import("helpers.zig");
 pub const Tracepoint = @import("tracepoint.zig");
-pub usingnamespace @import("sections.zig");
+pub const sections = @import("sections.zig");
 
 pub fn Map(
     comptime Key: type,
     comptime Value: type,
 ) type {
     return struct {
-        def: MapDef,
+        def: common.MapDef,
 
         const Self = @This();
 
-        pub fn init(map_type: MapType, max_entries: u32, flags: u32) Self {
+        pub fn init(map_type: common.MapType, max_entries: u32, flags: u32) Self {
             return Self{
-                .def = MapDef{
+                .def = common.MapDef{
                     .type = @enumToInt(map_type),
                     .key_size = @sizeOf(Key),
                     .value_size = @sizeOf(Value),
@@ -29,7 +29,7 @@ pub fn Map(
 
         /// Perform a lookup in *map* for an entry associated to *key*.
         pub fn lookup(self: Self, key: Key) ?*Value {
-            return @ptrCast(?*Value, @alignCast(@alignOf(?*Value), helpers.map_lookup_elem(@ptrCast(*const MapDef, &self), &key)));
+            return @ptrCast(?*Value, @alignCast(@alignOf(?*Value), helpers.map_lookup_elem(@ptrCast(*const common.MapDef, &self), &key)));
         }
 
         /// Add or update the value of the entry associated to `key` in `map`
@@ -42,9 +42,9 @@ pub fn Map(
         /// Flag value `noexist` cannot be used for maps of types
         /// `BPF_MAP_TYPE_ARRAY` or `BPF_MAP_TYPE_PERCPU_ARRAY` (all elements
         /// always exist), the helper would return an error.
-        pub fn update(self: Self, update_type: MapUpdateType, key: Key, value: Value) !void {
+        pub fn update(self: Self, update_type: common.MapUpdateType, key: Key, value: Value) !void {
             const rc = helpers.map_update_elem(
-                @ptrCast(*const MapDef, &self),
+                @ptrCast(*const common.MapDef, &self),
                 &key,
                 &value,
                 @enumToInt(update_type),
@@ -57,7 +57,7 @@ pub fn Map(
 
         /// Delete entry with *key* from *map*.
         pub fn delete(self: Self, key: Key) !void {
-            const rc = helpers.map_delete_elem(@ptrCast(*const MapDef, &self), &key);
+            const rc = helpers.map_delete_elem(@ptrCast(*const common.MapDef, &self), &key);
             return switch (rc) {
                 0 => {},
                 else => error.Unknown,
@@ -85,7 +85,7 @@ pub fn HashMap(
             return self.map.lookup(key);
         }
 
-        pub fn update(self: Self, update_type: MapUpdateType, key: Key, value: Value) !void {
+        pub fn update(self: Self, update_type: common.MapUpdateType, key: Key, value: Value) !void {
             return self.map.update(update_type, key, value);
         }
 
@@ -111,7 +111,7 @@ pub fn ArrayMap(comptime Value: type) type {
             return self.map.lookup(key);
         }
 
-        pub fn update(self: Self, update_type: MapUpdateType, key: u32, value: Value) !void {
+        pub fn update(self: Self, update_type: common.MapUpdateType, key: u32, value: Value) !void {
             return self.map.update(update_type, key, value);
         }
 
@@ -168,7 +168,7 @@ pub const PerfEventArray = struct {
     /// - Only the packet payload, or
     /// - A combination of both.
     pub fn event_output(self: Self, ctx: anytype, flags: u64, data: []u8) !void {
-        const rc = helpers.perf_event_output(ctx, @ptrCast(*const MapDef, &self), flags, data.ptr, data.len);
+        const rc = helpers.perf_event_output(ctx, @ptrCast(*const common.MapDef, &self), flags, data.ptr, data.len);
         return switch (rc) {
             0 => {},
             else => error.Unknown,
