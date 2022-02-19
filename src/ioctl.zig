@@ -38,16 +38,16 @@ pub fn IO(io_type: u8, nr: u8) Request {
     return io_impl(bits.none, io_type, nr, void);
 }
 
-pub fn IOR(type: u8, nr: u8, comptime T: type) Request {
-    return io_impl(bits.read, type, nr, T);
+pub fn IOR(@"type": u8, nr: u8, comptime T: type) Request {
+    return io_impl(bits.read, @"type", nr, T);
 }
 
-pub fn IOW(type: u8, nr: u8, comptime T: type) Request {
-    return io_impl(bits.write, type, nr, T);
+pub fn IOW(@"type": u8, nr: u8, comptime T: type) Request {
+    return io_impl(bits.write, @"type", nr, T);
 }
 
-pub fn IOWR(type: u8, nr: u8, comptime T: type) Request {
-    return io_impl(bits.read | bits.write, type, nr, T);
+pub fn IOWR(@"type": u8, nr: u8, comptime T: type) Request {
+    return io_impl(bits.read | bits.write, @"type", nr, T);
 }
 
 test "Ioctl.Cmd size" {

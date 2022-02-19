@@ -6,6 +6,10 @@ const kern = @import("kern.zig");
 //
 // Note, these function signatures were created from documentation found in
 // '/usr/include/linux/bpf.h'
+const SkFullSock = opaque {};
+const PtRegs = opaque {};
+const TcpHdr = opaque {};
+
 pub const map_lookup_elem = @intToPtr(fn (map: *const kern.MapDef, key: ?*const anyopaque) ?*anyopaque, 1);
 pub const map_update_elem = @intToPtr(fn (map: *const kern.MapDef, key: ?*const anyopaque, value: ?*const anyopaque, flags: u64) c_long, 2);
 pub const map_delete_elem = @intToPtr(fn (map: *const kern.MapDef, key: ?*const anyopaque) c_long, 3);

@@ -1,12 +1,13 @@
-usingnamespace std.os.linux;
-usingnamespace @import("user.zig");
-usingnamespace @import("common.zig");
+const linux = std.os.linux;
+const user = @import("user.zig");
+const common = @import("common.zig");
 
 const std = @import("std");
 const perf = @import("perf.zig");
 
 const mem = std.mem;
 const Channel = std.event.Channel;
+const fd_t = linux.fd_t;
 
 allocator: *mem.Allocator,
 fd: fd_t,
@@ -45,8 +46,8 @@ const RingBuffer = struct {
             .mmap = try std.os.mmap(
                 null,
                 mmap_size + mem.page_size,
-                PROT_READ | PROT_WRITE,
-                MAP_SHARED,
+                linux.PROT_READ | linux.PROT_WRITE,
+                linux.MAP_SHARED,
                 fd,
                 0,
             ),
@@ -71,7 +72,7 @@ const RingBuffer = struct {
 
         return switch (ehdr.type) {
             perf.RECORD_SAMPLE => blk: {
-                const offset = mem.page_size + ((start + @byteOffsetOf(perf.SampleRaw, "size")) % size);
+                const offset = mem.page_size + ((start + @bitOffsetOf(perf.SampleRaw, "size")) % size);
                 const sample_size = @ptrCast(*const u32, @alignCast(@alignOf(*const u32), &self.mmap[offset])).*;
                 const sample_start = mem.page_size + ((start + @sizeOf(perf.SampleRaw)) % size);
 
@@ -88,7 +89,7 @@ const RingBuffer = struct {
                 break :blk .{ .sample = sample };
             },
             perf.RECORD_LOST => blk: {
-                const offset = mem.page_size + ((start + @byteOffsetOf(perf.SampleLost, "lost")) % size);
+                const offset = mem.page_size + ((start + @bitOffsetOf(perf.SampleLost, "lost")) % size);
                 break :blk .{ .lost = @ptrCast(*const u64, @alignCast(@alignOf(*const u64), &self.mmap[offset])).* };
             },
             else => error.UnknownEvent,
@@ -129,7 +130,7 @@ const CpuBuf = struct {
         const ring_buffer = try RingBuffer.init(fd, mmap_size);
         errdefer ring_buffer.deinit();
 
-        const status = ioctl(fd, perf.EVENT_IOC_ENABLE, 0);
+        const status = linux.ioctl(fd, perf.EVENT_IOC_ENABLE, 0);
         if (status != 0) return error.GoFixIoctlHandling;
 
         return CpuBuf{
@@ -164,13 +165,13 @@ const CpuBuf = struct {
 
     pub fn deinit(self: CpuBuf) void {
         self.ring_buffer.deinit();
-        const status = ioctl(self.fd, perf.EVENT_IOC_DISABLE, 0);
+        const status = linux.ioctl(self.fd, perf.EVENT_IOC_DISABLE, 0);
         if (status != 0) unreachable;
         std.os.close(self.fd);
     }
 };
 
-pub fn init(allocator: *mem.Allocator, map: PerfEventArray, page_cnt: usize) !Self {
+pub fn init(allocator: *mem.Allocator, map: user.PerfEventArray, page_cnt: usize) !Self {
     // page count must be power of two
     if (@popCount(usize, page_cnt) != 1) {
         return error.PageCountSize;
@@ -193,7 +194,7 @@ pub fn init(allocator: *mem.Allocator, map: PerfEventArray, page_cnt: usize) !Se
             .cpubuf = try CpuBuf.init(i, mem.page_size * page_cnt),
             .frame = undefined,
         });
-        try map_update_elem(map.map.fd, mem.asBytes(&i), mem.asBytes(&ret.contexts.items[i].cpubuf.fd), 0);
+        try user.map_update_elem(map.map.fd, mem.asBytes(&i), mem.asBytes(&ret.contexts.items[i].cpubuf.fd), 0);
     }
 
     return ret;
@@ -230,11 +231,11 @@ pub fn run(self: *Self) callconv(.Async) void {
 test "perf buffer" {
     if (!std.io.is_async) return error.SkipZigTest;
 
-    const perf_event_array = try PerfEventArray.init(MapInfo{
+    const perf_event_array = try user.PerfEventArray.init(common.MapInfo{
         .name = "",
         .fd = null,
         .def = @import("kern.zig").MapDef{
-            .type = @enumToInt(MapType.perf_event_array),
+            .type = @enumToInt(common.MapType.perf_event_array),
             .key_size = @sizeOf(u32),
             .value_size = @sizeOf(u32),
             .max_entries = 64,

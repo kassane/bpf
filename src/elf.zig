@@ -1,5 +1,5 @@
 const std = @import("std");
-pub usingnamespace std.elf;
+pub const elf_linux = std.elf;
 
 pub fn offset_to_value(comptime T: type, buf: []const u8, offset: usize) T {
     var ret: T = undefined;
@@ -7,8 +7,8 @@ pub fn offset_to_value(comptime T: type, buf: []const u8, offset: usize) T {
     return ret;
 }
 
-fn get_header(comptime elf: []const u8) *const Elf64_Ehdr {
-    return @ptrCast(*const Elf64_Ehdr, elf.ptr);
+fn get_header(comptime elf: []const u8) *const elf_linux.Elf64_Ehdr {
+    return @ptrCast(*const elf_linux.Elf64_Ehdr, elf.ptr);
 }
 
 fn strtab_get_str(strtab: []const u8, offset: usize) []const u8 {
@@ -20,11 +20,11 @@ fn strtab_get_str(strtab: []const u8, offset: usize) []const u8 {
 }
 
 pub fn has_section(comptime elf: []const u8, comptime name: []const u8) bool {
-    const header = std.mem.bytesToValue(Elf64_Ehdr, elf[0..@sizeOf(Elf64_Ehdr)]);
+    const header = std.mem.bytesToValue(elf_linux.Elf64_Ehdr, elf[0..@sizeOf(elf_linux.Elf64_Ehdr)]);
 
-    const sections = offset_to_value([header.e_shnum]Elf64_Shdr, elf, header.e_shoff);
+    const sections = offset_to_value([header.e_shnum]elf_linux.Elf64_Shdr, elf, header.e_shoff);
     const strtab = for (sections) |section| {
-        if (section.sh_type == SHT_STRTAB)
+        if (section.sh_type == elf_linux.SHT_STRTAB)
             break offset_to_value([section.sh_size]u8, elf, section.sh_offset);
     } else @compileError("strtab not found");
 
@@ -38,16 +38,16 @@ pub fn has_section(comptime elf: []const u8, comptime name: []const u8) bool {
 
 pub fn has_map(comptime elf: []const u8, comptime name: []const u8) bool {
     const header = get_header(elf);
-    //const header = std.mem.bytesToValue(Elf64_Ehdr, elf[0..@sizeOf(Elf64_Ehdr)]);
-    const sections = offset_to_value([header.e_shnum]Elf64_Shdr, elf, header.e_shoff);
+    //const header = std.mem.bytesToValue(elf_linux.Elf64_Ehdr, elf[0..@sizeOf(elf_linux.Elf64_Ehdr)]);
+    const sections = offset_to_value([header.e_shnum]elf_linux.Elf64_Shdr, elf, header.e_shoff);
 
     const strtab = for (sections) |section| {
-        if (section.sh_type == SHT_STRTAB)
+        if (section.sh_type == elf_linux.SHT_STRTAB)
             break offset_to_value([section.sh_size]u8, elf, section.sh_offset);
     } else @compileError("strtab not found");
 
     const symtab = for (sections) |section| {
-        if (section.sh_type == SHT_SYMTAB) {
+        if (section.sh_type == elf_linux.SHT_SYMTAB) {
             break offset_to_value([section.sh_size]u8, elf, section.sh_offset);
         }
     } else @compileError("symtab not found");

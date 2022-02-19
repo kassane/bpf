@@ -1,4 +1,4 @@
-usingnamespace @import("flags.zig");
+const flag = @import("flags.zig");
 const std = @import("std");
 const Helper = @import("user.zig").Helper;
 const expectEqual = std.testing.expectEqual;
@@ -16,54 +16,54 @@ pub const Insn = packed struct {
 
     /// r0 - r9 are general purpose 64-bit registers, r10 points to the stack
     /// frame
-    pub const Reg = packed enum(u4) { r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10 };
-    const Source = packed enum(u1) { reg, imm };
+    pub const Reg = enum(u4) { r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, r10 };
+    const Source = enum(u1) { reg, imm };
 
-    const Mode = packed enum(u8) {
-        imm = IMM,
-        abs = ABS,
-        ind = IND,
-        mem = MEM,
-        len = LEN,
-        msh = MSH,
+    const Mode = enum(u8) {
+        imm = flag.IMM,
+        abs = flag.ABS,
+        ind = flag.IND,
+        mem = flag.MEM,
+        len = flag.LEN,
+        msh = flag.MSH,
     };
 
-    const AluOp = packed enum(u8) {
-        add = ADD,
-        sub = SUB,
-        mul = MUL,
-        div = DIV,
-        alu_or = OR,
-        alu_and = AND,
-        lsh = LSH,
-        rsh = RSH,
-        neg = NEG,
-        mod = MOD,
-        xor = XOR,
-        mov = MOV,
-        arsh = ARSH,
+    const AluOp = enum(u8) {
+        add = flag.ADD,
+        sub = flag.SUB,
+        mul = flag.MUL,
+        div = flag.DIV,
+        alu_or = flag.OR,
+        alu_and = flag.AND,
+        lsh = flag.LSH,
+        rsh = flag.RSH,
+        neg = flag.NEG,
+        mod = flag.MOD,
+        xor = flag.XOR,
+        mov = flag.MOV,
+        arsh = flag.ARSH,
     };
 
-    pub const Size = packed enum(u8) {
-        byte = B,
-        half_word = H,
-        word = W,
-        double_word = DW,
+    pub const Size = enum(u8) {
+        byte = flag.B,
+        half_word = flag.H,
+        word = flag.W,
+        double_word = flag.DW,
     };
 
-    const JmpOp = packed enum(u8) {
-        ja = JA,
-        jeq = JEQ,
-        jgt = JGT,
-        jge = JGE,
-        jset = JSET,
-        jlt = JLT,
-        jle = JLE,
-        jne = JNE,
-        jsgt = JSGT,
-        jsge = JSGE,
-        jslt = JSLT,
-        jsle = JSLE,
+    const JmpOp = enum(u8) {
+        ja = flag.JA,
+        jeq = flag.JEQ,
+        jgt = flag.JGT,
+        jge = flag.JGE,
+        jset = flag.JSET,
+        jlt = flag.JLT,
+        jle = flag.JLE,
+        jne = flag.JNE,
+        jsgt = flag.JSGT,
+        jsge = flag.JSGE,
+        jslt = flag.JSLT,
+        jsle = flag.JSLE,
     };
 
     const ImmOrReg = union(Source) {
@@ -78,8 +78,8 @@ pub const Insn = packed struct {
             ImmOrReg{ .imm = src };
 
         const src_type = switch (imm_or_reg) {
-            .imm => K,
-            .reg => X,
+            .imm => flag.K,
+            .reg => flag.X,
         };
 
         return Insn{
@@ -99,8 +99,8 @@ pub const Insn = packed struct {
 
     fn alu(comptime width: comptime_int, op: AluOp, dst: Reg, src: anytype) Insn {
         const width_bitfield = switch (width) {
-            32 => ALU,
-            64 => ALU64,
+            32 => flag.ALU,
+            64 => flag.ALU64,
             else => @compileError("width must be 32 or 64"),
         };
 
@@ -160,7 +160,7 @@ pub const Insn = packed struct {
     }
 
     fn jmp(op: JmpOp, dst: Reg, src: anytype, off: i16) Insn {
-        return imm_reg(JMP | @enumToInt(op), dst, src, off);
+        return imm_reg(flag.JMP | @enumToInt(op), dst, src, off);
     }
 
     pub fn ja(off: i16) Insn {
@@ -213,7 +213,7 @@ pub const Insn = packed struct {
 
     pub fn xadd(dst: Reg, src: Reg) Insn {
         return Insn{
-            .code = STX | XADD | DW,
+            .code = flag.STX | flag.XADD | flag.DW,
             .dst = @enumToInt(dst),
             .src = @enumToInt(src),
             .off = 0,
@@ -223,7 +223,7 @@ pub const Insn = packed struct {
 
     fn ld(mode: Mode, size: Size, dst: Reg, src: Reg, imm: i32) Insn {
         return Insn{
-            .code = @enumToInt(mode) | @enumToInt(size) | LD,
+            .code = @enumToInt(mode) | @enumToInt(size) | flag.LD,
             .dst = @enumToInt(dst),
             .src = @enumToInt(src),
             .off = 0,
@@ -241,7 +241,7 @@ pub const Insn = packed struct {
 
     pub fn ldx(size: Size, dst: Reg, src: Reg, off: i16) Insn {
         return Insn{
-            .code = MEM | @enumToInt(size) | LDX,
+            .code = flag.MEM | @enumToInt(size) | flag.LDX,
             .dst = @enumToInt(dst),
             .src = @enumToInt(src),
             .off = off,
@@ -251,7 +251,7 @@ pub const Insn = packed struct {
 
     fn ld_imm_impl1(dst: Reg, src: Reg, imm: u64) Insn {
         return Insn{
-            .code = LD | DW | IMM,
+            .code = flag.LD | flag.DW | flag.IMM,
             .dst = @enumToInt(dst),
             .src = @enumToInt(src),
             .off = 0,
@@ -278,7 +278,7 @@ pub const Insn = packed struct {
     }
 
     pub fn ld_map_fd1(dst: Reg, map_fd: fd_t) Insn {
-        return ld_imm_impl1(dst, @intToEnum(Reg, PSEUDO_MAP_FD), @intCast(u64, map_fd));
+        return ld_imm_impl1(dst, @intToEnum(Reg, flag.PSEUDO_MAP_FD), @intCast(u64, map_fd));
     }
 
     pub fn ld_map_fd2(map_fd: fd_t) Insn {
@@ -288,7 +288,7 @@ pub const Insn = packed struct {
     pub fn st(comptime size: Size, dst: Reg, off: i16, imm: i32) Insn {
         if (size == .double_word) @compileError("TODO: need to determine how to correctly handle double words");
         return Insn{
-            .code = MEM | @enumToInt(size) | ST,
+            .code = flag.MEM | @enumToInt(size) | flag.ST,
             .dst = @enumToInt(dst),
             .src = 0,
             .off = off,
@@ -298,7 +298,7 @@ pub const Insn = packed struct {
 
     pub fn stx(size: Size, dst: Reg, off: i16, src: Reg) Insn {
         return Insn{
-            .code = MEM | @enumToInt(size) | STX,
+            .code = flag.MEM | @enumToInt(size) | flag.STX,
             .dst = @enumToInt(dst),
             .src = @enumToInt(src),
             .off = off,
@@ -334,7 +334,7 @@ pub const Insn = packed struct {
 
     pub fn call(helper: Helper) Insn {
         return Insn{
-            .code = JMP | CALL,
+            .code = flag.JMP | flag.CALL,
             .dst = 0,
             .src = 0,
             .off = 0,
@@ -345,7 +345,7 @@ pub const Insn = packed struct {
     /// exit BPF program
     pub fn exit() Insn {
         return Insn{
-            .code = JMP | EXIT,
+            .code = flag.JMP | flag.EXIT,
             .dst = 0,
             .src = 0,
             .off = 0,
@@ -417,7 +417,7 @@ test "opcodes" {
 
     //   loading a map fd
     expect_opcode(0x18, Insn.ld_map_fd1(.r1, 0));
-    expectEqual(@intCast(u4, PSEUDO_MAP_FD), Insn.ld_map_fd1(.r1, 0).src);
+    expectEqual(@intCast(u4, flag.PSEUDO_MAP_FD), Insn.ld_map_fd1(.r1, 0).src);
     expect_opcode(0x00, Insn.ld_map_fd2(0));
 
     expect_opcode(0x38, Insn.ld_abs(.double_word, .r1, .r2, 0));

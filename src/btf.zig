@@ -1,8 +1,6 @@
 const magic = 0xeb9f;
 const version = 1;
 
-pub const ext = @import("ext.zig");
-
 /// All offsets are in bytes relative to the end of this header
 pub const Header = packed struct {
     magic: u16,
